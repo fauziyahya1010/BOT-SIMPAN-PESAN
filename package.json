@@ -1,0 +1,16 @@
+{
+  "name": "discord-auto-code-bot",
+  "version": "1.0.0",
+  "description": "Automatically convert messages into copyable code blocks.",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.21.0"
+  }
+}
