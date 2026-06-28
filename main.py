@@ -1,20 +1,20 @@
 import os
 import asyncio
 import logging
-from discord.ext import commands
+import discord
 
-# 1. Konfigurasi Logging (Agar riwayat aktivitas terlihat rapi di panel Railway)
+# Konfigurasi Logging (Waktu menggunakan standar server, akan otomatis tercatat)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# 2. Mengambil variabel lingkungan dari Railway
+# Mengambil variabel lingkungan dari Railway
 TOKEN = os.getenv("DISCORD_TOKEN")
 ALLOWED_CHANNELS_RAW = os.getenv("ALLOWED_CHANNELS", "")
 
-# 3. Parsing ID Channel dengan aman
+# Parsing ID Channel
 ALLOWED_CHANNELS = []
 if ALLOWED_CHANNELS_RAW:
     for channel_id in ALLOWED_CHANNELS_RAW.split(","):
@@ -22,46 +22,54 @@ if ALLOWED_CHANNELS_RAW:
         if cleaned_id.isdigit():
             ALLOWED_CHANNELS.append(int(cleaned_id))
 
-# 4. Setup Self-Bot
-bot = commands.Bot(command_prefix="", self_bot=True)
+# Menggunakan discord.Client (Paling aman untuk Self-Bot)
+client = discord.Client()
 
-@bot.event
+@client.event
 async def on_ready():
     logging.info("="*50)
     logging.info(f"✅ BOT BERHASIL ONLINE!")
-    logging.info(f"👤 Akun          : {bot.user.name}")
+    logging.info(f"👤 Akun          : {client.user.name}")
+    
+    # Memeriksa dan memastikan bot tersambung ke Channel DC yang tepat
     if ALLOWED_CHANNELS:
-        logging.info(f"📡 Channel Aktif : {ALLOWED_CHANNELS}")
+        logging.info("📡 Memeriksa koneksi ke Channel Discord...")
+        for ch_id in ALLOWED_CHANNELS:
+            channel = client.get_channel(ch_id)
+            if channel:
+                logging.info(f"   ✔️ Tersambung ke channel : #{channel.name}")
+            else:
+                logging.warning(f"   ❌ Gagal membaca channel ID {ch_id}. (Apakah ID salah?)")
     else:
-        logging.warning("⚠️ TIDAK ADA CHANNEL! Bot akan aktif di semua channel (Sangat Berbahaya).")
+        logging.warning("⚠️ TIDAK ADA CHANNEL YANG DIATUR! Bot aktif di semua channel (Sangat Berbahaya).")
     logging.info("="*50)
 
-@bot.event
+@client.event
 async def on_message(message):
-    # Pengecekan 1: Pastikan yang mengirim pesan adalah AKUN ANDA SENDIRI
-    if message.author.id != bot.user.id:
+    # 1. Pastikan yang mengirim pesan adalah AKUN ANDA SENDIRI
+    if message.author.id != client.user.id:
         return
 
-    # Pengecekan 2: Pastikan pesan dikirim di channel yang terdaftar di Railway
+    # 2. Pastikan pesan dikirim di channel yang terdaftar
     if ALLOWED_CHANNELS and (message.channel.id not in ALLOWED_CHANNELS):
         return
 
     content = message.content.strip()
 
-    # Pengecekan 3: Abaikan jika pesan SUDAH berupa Kotak Salin (mencegah looping spam)
+    # 3. Abaikan jika pesan SUDAH berupa Kotak Salin
     if content.startswith("```") and content.endswith("```"):
         return
 
-    # Pemisahan teks berdasarkan baris baru, hapus baris kosong/spasi
+    # Pemisahan teks berdasarkan baris baru
     lines = [line.strip() for line in content.splitlines() if line.strip()]
 
     if not lines:
         return
 
-    # Eksekusi A: Hapus pesan asli Anda
+    # Eksekusi A: Hapus pesan asli
     try:
         await message.delete()
-        logging.info(f"🗑️ Pesan asli berhasil dihapus (Channel ID: {message.channel.id})")
+        logging.info(f"🗑️ Pesan asli dihapus dari #{message.channel.name}")
     except Exception as e:
         logging.error(f"❌ Gagal menghapus pesan asli: {e}")
         return 
@@ -69,20 +77,20 @@ async def on_message(message):
     # Eksekusi B: Kirim ulang setiap baris sebagai pesan Kotak Salin (Tombol Copy)
     for line in lines:
         try:
-            # Menggunakan TRIPLE BACKTICKS (```) agar menjadi Kotak Salin resmi Discord
+            # Menggunakan TRIPLE BACKTICKS (```)
             await message.channel.send(f"```text\n{line}\n```")
-            logging.info(f"➡️ Berhasil mengirim: {line}")
+            logging.info(f"➡️ Berhasil mengirim kode ke #{message.channel.name}")
         except Exception as e:
-            logging.error(f"❌ Gagal mengirim kode [{line}]: {e}")
+            logging.error(f"❌ Gagal mengirim kode: {e}")
         
-        # JEDA AMAN: 1.2 Detik (Wajib agar akun tidak di-banned Discord)
+        # JEDA AMAN: 1.2 Detik (Anti-banned)
         await asyncio.sleep(1.2)
 
 if __name__ == "__main__":
     if not TOKEN:
-        logging.critical("❌ Variabel 'DISCORD_TOKEN' tidak ditemukan di Railway! Bot dihentikan.")
+        logging.critical("❌ Variabel 'DISCORD_TOKEN' tidak ditemukan di Railway!")
     else:
         try:
-            bot.run(TOKEN)
+            client.run(TOKEN)
         except Exception as e:
-            logging.critical(f"❌ Gagal menjalankan bot (Pastikan token valid!): {e}")
+            logging.critical(f"❌ Gagal menjalankan bot: {e}")
