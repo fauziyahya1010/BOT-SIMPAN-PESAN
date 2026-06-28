@@ -48,26 +48,25 @@ async def on_message(message):
 
     content = message.content.strip()
 
-    # Pengecekan 3: Abaikan jika pesan SUDAH berupa Kotak Salin (mencegah looping tanpa henti)
+    # Pengecekan 3: Abaikan jika pesan SUDAH berupa Kotak Salin (mencegah looping spam)
     if content.startswith("```") and content.endswith("```"):
         return
 
-    # Pemisahan teks berdasarkan baris baru (enter), hapus baris yang kosong/spasi
+    # Pemisahan teks berdasarkan baris baru, hapus baris kosong/spasi
     lines = [line.strip() for line in content.splitlines() if line.strip()]
 
-    # Jika tidak ada teks valid, hentikan proses
     if not lines:
         return
 
-    # Eksekusi A: Hapus pesan asli Anda (Pesan yang panjang)
+    # Eksekusi A: Hapus pesan asli Anda
     try:
         await message.delete()
         logging.info(f"🗑️ Pesan asli berhasil dihapus (Channel ID: {message.channel.id})")
     except Exception as e:
         logging.error(f"❌ Gagal menghapus pesan asli: {e}")
-        return # Jika gagal dihapus, batalkan pengiriman ulang agar tidak dobel/spam
+        return 
 
-    # Eksekusi B: Kirim ulang setiap baris sebagai pesan baru (Kotak Salin/Tombol Copy)
+    # Eksekusi B: Kirim ulang setiap baris sebagai pesan Kotak Salin (Tombol Copy)
     for line in lines:
         try:
             # Menggunakan TRIPLE BACKTICKS (```) agar menjadi Kotak Salin resmi Discord
@@ -76,10 +75,9 @@ async def on_message(message):
         except Exception as e:
             logging.error(f"❌ Gagal mengirim kode [{line}]: {e}")
         
-        # JEDA AMAN: 1.2 Detik (Wajib ada agar sistem keamanan Discord tidak mem-banned akun Anda)
+        # JEDA AMAN: 1.2 Detik (Wajib agar akun tidak di-banned Discord)
         await asyncio.sleep(1.2)
 
-# Perintah untuk menjalankan bot
 if __name__ == "__main__":
     if not TOKEN:
         logging.critical("❌ Variabel 'DISCORD_TOKEN' tidak ditemukan di Railway! Bot dihentikan.")
