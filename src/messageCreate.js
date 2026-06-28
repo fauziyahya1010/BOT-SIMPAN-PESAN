@@ -2,15 +2,17 @@ const { Events } = require("discord.js");
 
 module.exports = (client) => {
 
-    client.on(Events.MessageCreate, async (message) => {
+    console.log("messageCreate.js berhasil dimuat");
 
-        console.log(
-            "Pesan diterima:",
-            message.author.tag,
-            message.author.id,
-            message.channel.id,
-            message.content
-        );
+    client.on(Events.MessageCreate, (message) => {
+
+        console.log("==================================");
+        console.log("Pesan diterima");
+        console.log("Author :", message.author.tag);
+        console.log("User ID:", message.author.id);
+        console.log("Channel:", message.channel.id);
+        console.log("Isi    :", message.content);
+        console.log("==================================");
 
     });
 
