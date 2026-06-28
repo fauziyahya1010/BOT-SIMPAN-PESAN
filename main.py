@@ -56,8 +56,8 @@ async def on_message(message):
 
     content = message.content.strip()
 
-    # 3. Abaikan jika pesan SUDAH berupa Kotak Pendek (mencegah bot memproses ulang pesannya sendiri)
-    if content.startswith("`") and content.endswith("`"):
+    # 3. Abaikan jika pesan SUDAH berupa Kotak Salin
+    if content.startswith("```") and content.endswith("```"):
         return
 
     # Pemisahan teks berdasarkan baris baru
@@ -74,11 +74,11 @@ async def on_message(message):
         logging.error(f"❌ Gagal menghapus pesan asli: {e}")
         return 
 
-    # Eksekusi B: Kirim ulang setiap baris sebagai pesan Kotak Pendek (Inline Code)
+    # Eksekusi B: Kirim ulang setiap baris sebagai pesan Kotak Salin (Tombol Copy)
     for line in lines:
         try:
-            # Menggunakan SINGLE BACKTICK (`) agar kotak mengecil sesuai jumlah huruf
-            await message.channel.send(f"`{line}`")
+            # Menggunakan TRIPLE BACKTICKS (```)
+            await message.channel.send(f"```text\n{line}\n```")
             logging.info(f"➡️ Berhasil mengirim kode ke #{message.channel.name}")
         except Exception as e:
             logging.error(f"❌ Gagal mengirim kode: {e}")
